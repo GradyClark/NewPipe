@@ -18,6 +18,8 @@ import org.ocpsoft.prettytime.units.Decade;
 import org.schabi.newpipe.R;
 import org.schabi.newpipe.extractor.localization.ContentCountry;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -25,6 +27,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+
 
 /*
  * Created by chschtsch on 12/29/15.
@@ -48,8 +51,8 @@ import java.util.Locale;
 
 public class Localization {
 
-    private static PrettyTime prettyTime;
     private static final String DOT_SEPARATOR = " • ";
+    private static PrettyTime prettyTime;
 
     private Localization() {
     }
@@ -83,14 +86,20 @@ public class Localization {
     public static org.schabi.newpipe.extractor.localization.Localization getPreferredLocalization(final Context context) {
         final String contentLanguage = PreferenceManager
                 .getDefaultSharedPreferences(context)
-                .getString(context.getString(R.string.content_language_key), context.getString(R.string.default_language_value));
+                .getString(context.getString(R.string.content_language_key), context.getString(R.string.default_localization_key));
+        if (contentLanguage.equals(context.getString(R.string.default_localization_key))) {
+            return org.schabi.newpipe.extractor.localization.Localization.fromLocale(Locale.getDefault());
+        }
         return org.schabi.newpipe.extractor.localization.Localization.fromLocalizationCode(contentLanguage);
     }
 
     public static ContentCountry getPreferredContentCountry(final Context context) {
         final String contentCountry = PreferenceManager
                 .getDefaultSharedPreferences(context)
-                .getString(context.getString(R.string.content_country_key), context.getString(R.string.default_country_value));
+                .getString(context.getString(R.string.content_country_key), context.getString(R.string.default_localization_key));
+        if (contentCountry.equals(context.getString(R.string.default_localization_key))) {
+            return new ContentCountry(Locale.getDefault().getCountry());
+        }
         return new ContentCountry(contentCountry);
     }
 
@@ -98,13 +107,13 @@ public class Localization {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
 
         String languageCode = sp.getString(context.getString(R.string.content_language_key),
-                context.getString(R.string.default_language_value));
+                context.getString(R.string.default_localization_key));
 
         try {
             if (languageCode.length() == 2) {
                 return new Locale(languageCode);
             } else if (languageCode.contains("_")) {
-                String country = languageCode.substring(languageCode.indexOf("_"), languageCode.length());
+                String country = languageCode.substring(languageCode.indexOf("_"));
                 return new Locale(languageCode.substring(0, 2), country);
             }
         } catch (Exception ignored) {
@@ -114,8 +123,11 @@ public class Localization {
     }
 
     public static String localizeNumber(Context context, long number) {
-        Locale locale = getPreferredLocale(context);
-        NumberFormat nf = NumberFormat.getInstance(locale);
+        return localizeNumber(context, (double) number);
+    }
+
+    public static String localizeNumber(Context context, double number) {
+        NumberFormat nf = NumberFormat.getInstance(getAppLocale(context));
         return nf.format(number);
     }
 
@@ -132,23 +144,24 @@ public class Localization {
         return getQuantity(context, R.plurals.views, R.string.no_views, viewCount, localizeNumber(context, viewCount));
     }
 
-    public static String localizeSubscribersCount(Context context, long subscriberCount) {
-        return getQuantity(context, R.plurals.subscribers, R.string.no_subscribers, subscriberCount, localizeNumber(context, subscriberCount));
-    }
-
     public static String localizeStreamCount(Context context, long streamCount) {
         return getQuantity(context, R.plurals.videos, R.string.no_videos, streamCount, localizeNumber(context, streamCount));
     }
 
+    public static String localizeWatchingCount(Context context, long watchingCount) {
+        return getQuantity(context, R.plurals.watching, R.string.no_one_watching, watchingCount, localizeNumber(context, watchingCount));
+    }
+
     public static String shortCount(Context context, long count) {
+        double value = (double) count;
         if (count >= 1000000000) {
-            return Long.toString(count / 1000000000) + context.getString(R.string.short_billion);
+            return localizeNumber(context, round(value / 1000000000, 1)) + context.getString(R.string.short_billion);
         } else if (count >= 1000000) {
-            return Long.toString(count / 1000000) + context.getString(R.string.short_million);
+            return localizeNumber(context, round(value / 1000000, 1)) + context.getString(R.string.short_million);
         } else if (count >= 1000) {
-            return Long.toString(count / 1000) + context.getString(R.string.short_thousand);
+            return localizeNumber(context, round(value / 1000, 1)) + context.getString(R.string.short_thousand);
         } else {
-            return Long.toString(count);
+            return localizeNumber(context, value);
         }
     }
 
@@ -156,7 +169,7 @@ public class Localization {
         return getQuantity(context, R.plurals.listening, R.string.no_one_listening, listeningCount, shortCount(context, listeningCount));
     }
 
-    public static String watchingCount(Context context, long watchingCount) {
+    public static String shortWatchingCount(Context context, long watchingCount) {
         return getQuantity(context, R.plurals.watching, R.string.no_one_watching, watchingCount, shortCount(context, watchingCount));
     }
 
@@ -215,7 +228,9 @@ public class Localization {
     }
 
     public static String relativeTime(Calendar calendarTime) {
-        return getPrettyTime().formatUnrounded(calendarTime);
+        String time = getPrettyTime().formatUnrounded(calendarTime);
+        return time.startsWith("-") ? time.substring(1) : time;
+        //workaround fix for russian showing -1 day ago, -19hrs ago…
     }
 
     private static void changeAppLanguage(Locale loc, Resources res) {
@@ -226,10 +241,10 @@ public class Localization {
     }
 
     public static Locale getAppLocale(Context context) {
-        SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
-        String lang = prefs.getString("app_language_key", "en");
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String lang = prefs.getString(context.getString(R.string.app_language_key), "en");
         Locale loc;
-        if (lang.equals("system")) {
+        if (lang.equals(context.getString(R.string.default_localization_key))) {
             loc = Locale.getDefault();
         } else if (lang.matches(".*-.*")) {
             //to differentiate different versions of the language
@@ -246,5 +261,9 @@ public class Localization {
 
     public static void assureCorrectAppLanguage(Context c) {
         changeAppLanguage(getAppLocale(c), c.getResources());
+    }
+
+    private static double round(double value, int places) {
+        return new BigDecimal(value).setScale(places, RoundingMode.HALF_UP).doubleValue();
     }
 }

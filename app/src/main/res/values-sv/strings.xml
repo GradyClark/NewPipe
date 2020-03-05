@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="main_bg_subtitle">Tryck på sök för att komma igång</string>
+    <string name="main_bg_subtitle">Tryck på \"Sök\" för att komma igång</string>
     <string name="upload_date_text">Publicerad den %1$s</string>
     <string name="no_player_found">Ingen strömspelare hittades. Vill du installera VLC?</string>
     <string name="install">Installera</string>
@@ -463,4 +463,9 @@
     <string name="enable_playback_resume_summary">Återställ den senaste uppspelningspositionen</string>
     <string name="enable_playback_state_lists_title">Positioner i listor</string>
     <string name="download_choose_new_path">Ändra nedladdningsmapp för att träda i kraft</string>
+    <string name="autoplay_title">Spela automatiskt</string>
+    <string name="settings_category_clear_data_title">Töm data</string>
+    <string name="seek_duration_title">Snabb spola -framåt/-bakåt</string>
+    <string name="enable_lock_screen_video_thumbnail_title">Aktivera video på låsskärmen</string>
+    <string name="enable_lock_screen_video_thumbnail_summary">När bakgrundsspelaren används så visas videon på låsskärmen</string>
 </resources>
