@@ -178,7 +178,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                 if (selectedItem instanceof PlaylistStreamEntry) {
                     final PlaylistStreamEntry item = (PlaylistStreamEntry) selectedItem;
                     NavigationHelper.openVideoDetailFragment(getFragmentManager(),
-                            item.serviceId, item.url, item.title);
+                            item.getStreamEntity().getServiceId(), item.getStreamEntity().getUrl(), item.getStreamEntity().getTitle());
                 }
             }
 
@@ -365,7 +365,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                                 isNonDuplicate = true;
                                 while (it_history.hasNext()) {
                                     history_item = it_history.next();
-                                    if (history_item.streamId == playlist_item.streamId) {
+                                    if (history_item.getStreamId() == playlist_item.getStreamId()) {
                                         isNonDuplicate = false;
                                         break;
                                     }
@@ -374,7 +374,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
                                     localItems.add(playlist_item);
                                 } else {
                                     removedItemCount++;
-                                    if (playlistManager.getPlaylistThumbnail(playlistId).equals(playlist_item.thumbnailUrl)) {
+                                    if (playlistManager.getPlaylistThumbnail(playlistId).equals(playlist_item.getStreamEntity().getThumbnailUrl())) {
                                         thumbnailVideoRemoved = true;
                                     }
                                 }
@@ -531,7 +531,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         String newThumbnailUrl;
 
         if (!itemListAdapter.getItemsList().isEmpty()) {
-            newThumbnailUrl = ((PlaylistStreamEntry) itemListAdapter.getItemsList().get(0)).thumbnailUrl;
+            newThumbnailUrl = ((PlaylistStreamEntry) itemListAdapter.getItemsList().get(0)).getStreamEntity().getThumbnailUrl();
         } else {
             newThumbnailUrl = "drawable://" + R.drawable.dummy_thumbnail_playlist;
         }
@@ -543,7 +543,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         if (itemListAdapter == null) return;
 
         itemListAdapter.removeItem(item);
-        if (playlistManager.getPlaylistThumbnail(playlistId).equals(item.thumbnailUrl))
+        if (playlistManager.getPlaylistThumbnail(playlistId).equals(item.getStreamEntity().getThumbnailUrl()))
             updateThumbnailUrl();
 
         setVideoCount(itemListAdapter.getItemsList().size());
@@ -581,7 +581,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         List<Long> streamIds = new ArrayList<>(items.size());
         for (final LocalItem item : items) {
             if (item instanceof PlaylistStreamEntry) {
-                streamIds.add(((PlaylistStreamEntry) item).streamId);
+                streamIds.add(((PlaylistStreamEntry) item).getStreamId());
             }
         }
 
@@ -688,7 +688,7 @@ public class LocalPlaylistFragment extends BaseLocalListFragment<List<PlaylistSt
         StreamDialogEntry.start_here_on_background.setCustomAction(
                 (fragment, infoItemDuplicate) -> NavigationHelper.playOnBackgroundPlayer(context, getPlayQueueStartingAt(item), true));
         StreamDialogEntry.set_as_playlist_thumbnail.setCustomAction(
-                (fragment, infoItemDuplicate) -> changeThumbnailUrl(item.thumbnailUrl));
+                (fragment, infoItemDuplicate) -> changeThumbnailUrl(item.getStreamEntity().getThumbnailUrl()));
         StreamDialogEntry.delete.setCustomAction(
                 (fragment, infoItemDuplicate) -> deleteItem(item));
 
